@@ -75,7 +75,7 @@ int process_arglist(int count, char** arglist){
 
 
 int runPipeComm(int pipeInd, char**args){
-    int pid1,pid2, status;
+    int pid1,pid2, status, retVal;
     int pfds[2];
 
     args[pipeInd] = NULL;
@@ -91,37 +91,36 @@ int runPipeComm(int pipeInd, char**args){
         return 0;
 
     }else if(pid1 == 0){ /*Left side command*/
-        if(dup2(pfds[1], STDOUT_FILENO) < 0){
-            perror("Error: failed duping\n");
-            exit(0);
-        }
         close(pfds[0]);
+        dup2(pfds[1], STDOUT_FILENO);
+        close(pfds[1]);
 
-        if(execvp(args[0], args) < 0){
-            perror("Error: couldn't execute command.\n");
-            exit(0);
+        retVal = execvp(args[0], args);
+        if(retVal<0){
+            perror("Error: couldn't execute command\n");
+            return 0;
         }
-
+    
     }else{ /*Parent*/
         if((pid2 = fork()) < 0){
             perror("Error: forking failed.\n");
             return 0;
 
         }else if(pid2 == 0){ /*Right side command*/
-            if(dup2(pfds[0], STDIN_FILENO) < 0){
-                perror("Error: failed duping\n");
-                exit(0);
-            }
             close(pfds[1]);
+            dup2(pfds[0], STDIN_FILENO);
+            close(pfds[0]);
 
-            if(execvp(args[pipeInd+1], args+pipeInd+1) < 0){
-                perror("Error: couldn't execute command.\n");
-                exit(0);
+            retVal = execvp(args[pipeInd+1], args+pipeInd+1);
+            if(retVal<0){
+                perror("Error: couldn't execute command\n");
+                return 0;
             }
         }else{ /*Parent*/
             close(pfds[0]);
             close(pfds[1]);
             while(wait(&status) != pid1);
+            while(wait(&status) != pid2);
         }
     }
     
