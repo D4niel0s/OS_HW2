@@ -19,6 +19,9 @@ int runCommInBG(int,char**);
 
 // prepare and finalize calls for initialization and destruction of anything required
 int prepare(void){
+    signal(SIGINT, SIG_IGN);
+    signal(SIGCHLD, SIG_IGN);
+
     return 0;
 }
 int finalize(void){
@@ -31,8 +34,6 @@ int finalize(void){
 int process_arglist(int count, char** arglist){
     
     int i, pid, status, retVal;
-
-    signal(SIGINT, SIG_IGN);
 
 
     if(strcmp(arglist[count-1], "&") == 0){
@@ -95,7 +96,7 @@ int runAppendComm(int appInd, char **args){
     
     }else if(pid == 0){ /*Child*/
         signal(SIGINT, SIG_DFL);
-        fd = open(args[appInd+1], O_WRONLY);
+        fd = open(args[appInd+1], O_WRONLY | O_APPEND | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
 
         if(fd<0){
             perror("Error: could not open file\n");
