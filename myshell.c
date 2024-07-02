@@ -220,19 +220,15 @@ int runCommInBG(int count, char**args){
     if(pid < 0){
         perror("Failed forking.\n");
         return 0;
-    }
 
-    switch(pid){
-        case 0: /*Child*/
-            retVal = execvp(args[0], args);
-            if(retVal == -1){
-                perror("Error: couldn't execute command in background.\n");
-                exit(1);
-            }
-            break;
-        default: /*Parent*/
-            return 1;
+    }else if(pid == 0){ /*Child*/
+        retVal = execvp(args[0], args);
+        if(retVal == -1){
+            perror("Error: couldn't execute command in background.\n");
+            exit(1);
+        }
     }
+    /*Parent does nothing here*/
     return 1;
 }
 
