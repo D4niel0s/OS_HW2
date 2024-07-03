@@ -37,7 +37,6 @@ int process_arglist(int count, char** arglist){
 
 
     if(strcmp(arglist[count-1], "&") == 0){
-        arglist[count-1] = NULL;
         return runCommInBG(count-1,arglist);
     }
     for(i=0;i<count-1;++i){
@@ -215,7 +214,9 @@ int runPipeComm(int pipeInd, char**args){
 
 int runCommInBG(int count, char**args){
     int pid, retVal;
-    
+
+    args[count] = NULL;
+
     pid = fork();
     if(pid < 0){
         perror("Failed forking.\n");
