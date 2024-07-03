@@ -19,8 +19,15 @@ int runCommInBG(int,char**);
 
 // prepare and finalize calls for initialization and destruction of anything required
 int prepare(void){
-    signal(SIGINT, SIG_IGN);
-    signal(SIGCHLD, SIG_IGN);
+    if(signal(SIGINT, SIG_IGN) == SIG_ERR){
+        perror("Error: failed setting signal handler\n");
+        return 1;
+    }
+
+    if(signal(SIGCHLD, SIG_IGN) == SIG_ERR){
+        perror("Error: failed setting signal handler\n");
+        return 1;
+    }
 
     return 0;
 }
@@ -59,7 +66,10 @@ int process_arglist(int count, char** arglist){
         return 0;
 
     }else if(pid == 0){ /*Child*/
-        signal(SIGINT, SIG_DFL);
+        if(signal(SIGINT, SIG_DFL) == SIG_ERR){
+            perror("Error: failed setting signal handler\n");
+            exit(1);
+        }
 
         retVal = execvp(arglist[0], arglist);
         if(retVal == -1){
@@ -95,7 +105,11 @@ int runAppendComm(int appInd, char **args){
         return 0;
     
     }else if(pid == 0){ /*Child*/
-        signal(SIGINT, SIG_DFL);
+        if(signal(SIGINT, SIG_DFL) == SIG_ERR){
+            perror("Error: failed setting signal handler\n");
+            exit(1);
+        }
+
         fd = open(args[appInd+1], O_WRONLY | O_APPEND | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
         if(fd<0){
             perror("Error: could not open file\n");
@@ -148,7 +162,11 @@ int runRedirectComm(int revInd, char **args){
         return 0;
     
     }else if(pid == 0){ /*Child*/
-        signal(SIGINT, SIG_DFL);
+        if(signal(SIGINT, SIG_DFL) == SIG_ERR){
+            perror("Error: failed setting signal handler\n");
+            exit(1);
+        }
+
         fd = open(args[revInd+1], O_RDONLY);
         if(fd<0){
             perror("Error: could not open file\n");
@@ -206,7 +224,10 @@ int runPipeComm(int pipeInd, char**args){
         return 0;
 
     }else if(pid1 == 0){ /*Left side command*/
-        signal(SIGINT, SIG_DFL);
+        if(signal(SIGINT, SIG_DFL) == SIG_ERR){
+            perror("Error: failed setting signal handler\n");
+            exit(1);
+        }
 
         clsRet = close(pfds[0]);
         if(clsRet < 0){
@@ -239,7 +260,10 @@ int runPipeComm(int pipeInd, char**args){
             return 0;
 
         }else if(pid2 == 0){ /*Right side command*/
-            signal(SIGINT, SIG_DFL);
+            if(signal(SIGINT, SIG_DFL) == SIG_ERR){
+                perror("Error: failed setting signal handler\n");
+                exit(1);
+            }
 
             clsRet = close(pfds[1]);
             if(clsRet < 0){
