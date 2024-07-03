@@ -32,7 +32,7 @@ int finalize(void){
 // it contains count+1 items, where the last item (arglist[count]) and *only* the last is NULL
 // RETURNS - 1 if should continue, 0 otherwise
 int process_arglist(int count, char** arglist){
-    int i, pid, retVal;
+    int i, pid, waitRet, retVal;
 
     /*Check BG command*/
     if(strcmp(arglist[count-1], "&") == 0){
@@ -68,7 +68,8 @@ int process_arglist(int count, char** arglist){
         }
 
     }else{ /*Parent*/
-        if(waitpid(pid, NULL, 0) == -1){
+        waitRet = waitpid(pid, NULL, 0);
+        if(waitRet == -1){
             switch(errno){
                 case ECHILD:
                 case EINTR:
@@ -83,7 +84,7 @@ int process_arglist(int count, char** arglist){
 
 
 int runAppendComm(int appInd, char **args){
-    int fd, pid, retVal,dupRet, clsRet;
+    int fd, pid, retVal,dupRet, clsRet, waitRet;
 
     args[appInd] = NULL;
 
@@ -120,14 +121,23 @@ int runAppendComm(int appInd, char **args){
         }
 
     }else{ /*Parent*/
-        while(wait(NULL)>0);
+        waitRet = waitpid(pid, NULL, 0);
+        if(waitRet == -1){
+            switch(errno){
+                case ECHILD:
+                case  EINTR:
+                    break;
+                default:
+                    return 0;
+            }
+        }
     }
 
     return 1;
 }
 
 int runRedirectComm(int revInd, char **args){
-    int fd, pid, retVal,dupRet, clsRet;
+    int fd, pid, retVal,dupRet, clsRet, waitRet;
 
     args[revInd] = NULL;
 
@@ -164,14 +174,23 @@ int runRedirectComm(int revInd, char **args){
         }
 
     }else{ /*Parent*/
-        while(wait(NULL)>0);
+        waitRet = waitpid(pid, NULL, 0);
+        if(waitRet == -1){
+            switch(errno){
+                case ECHILD:
+                case  EINTR:
+                    break;
+                default:
+                    return 0;
+            }
+        }
     }
 
     return 1;
 }
 
 int runPipeComm(int pipeInd, char**args){
-    int pid1,pid2, retVal,dupRet, clsRet;
+    int pid1,pid2, retVal,dupRet, clsRet, waitRet1, waitRet2;
     int pfds[2];
 
     args[pipeInd] = NULL;
@@ -257,7 +276,29 @@ int runPipeComm(int pipeInd, char**args){
                 perror("Error: failed closing file\n");
                 exit(1);
             }
-            while(wait(NULL)>0);
+            
+            waitRet1 = waitpid(pid1, NULL,0);
+            if(waitRet1 < 0){
+                switch(errno){
+                    case ECHILD:
+                    case EINTR:
+                        break;
+                    default:
+                        return 0;
+                }
+            }
+
+            waitRet2 = waitpid(pid2, NULL,0);
+            if(waitRet2 < 0){
+                switch(errno){
+                    case ECHILD:
+                    case EINTR:
+                        break;
+                    default:
+                        return 0;
+                }
+            }
+
         }
     }
     
