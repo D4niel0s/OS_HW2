@@ -32,13 +32,14 @@ int finalize(void){
 // it contains count+1 items, where the last item (arglist[count]) and *only* the last is NULL
 // RETURNS - 1 if should continue, 0 otherwise
 int process_arglist(int count, char** arglist){
-    
     int i, pid, retVal;
 
-
+    /*Check BG command*/
     if(strcmp(arglist[count-1], "&") == 0){
         return runCommInBG(count-1,arglist);
     }
+
+    /*Check for modifiers and handle with corresponding function*/
     for(i=0;i<count-1;++i){
         if(strcmp(arglist[i], "|") == 0){
             return runPipeComm(i, arglist);
@@ -51,7 +52,7 @@ int process_arglist(int count, char** arglist){
         }
     }
     
-    /*Regular command*/
+    /*If we got here, arglist represents a "regular" command we should execute*/
     pid = fork();
     if(pid < 0){
         perror("Error: forking failed\n");
